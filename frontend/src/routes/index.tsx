@@ -10,6 +10,7 @@ import { HOSAlerts } from "@/components/hos/HOSAlerts";
 import { StopTimeline } from "@/components/hos/StopTimeline";
 import { DailyLogTabs } from "@/components/hos/DailyLogTabs";
 import { ModelAssumptions } from "@/components/hos/ModelAssumptions";
+import { RouteDirections } from "@/components/hos/RouteDirections";
 import { Disclaimer } from "@/components/hos/TopNav";
 
 export const Route = createFileRoute("/")({
@@ -61,6 +62,7 @@ function Index() {
         </div>
         <div className={loading ? "space-y-6 opacity-60 transition" : "space-y-6 transition"}>
           <RouteMap plan={plan} />
+          <RouteDirections plan={plan} />
           <HOSAlerts plan={plan} />
           <TripSummary plan={plan} />
         </div>
