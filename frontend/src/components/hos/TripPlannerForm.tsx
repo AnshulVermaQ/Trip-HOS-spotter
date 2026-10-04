@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Loader2, Gauge, Sparkles, Route as RouteIcon } from "lucide-react";
-import { DEMO_TRIP, geocode } from "@/lib/hos/mock-data";
+import { Loader2, Gauge, Route as RouteIcon } from "lucide-react";
+import { geocode } from "@/lib/hos/mock-data";
 import type { TripInput } from "@/lib/hos/types";
 import { Card, CardHeader } from "./ui";
 import { cn } from "@/lib/utils";
@@ -122,7 +122,7 @@ export function TripPlannerForm({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 pt-1 sm:flex-row lg:flex-col xl:flex-row">
+        <div className="pt-1">
           <Button
             type="submit"
             disabled={loading}
@@ -130,17 +130,6 @@ export function TripPlannerForm({
           >
             {loading ? <Loader2 className="size-4 animate-spin" /> : <RouteIcon className="size-4" />}
             Plan Trip
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              const d = { ...DEMO_TRIP, cycle: String(DEMO_TRIP.cycleUsedHours) };
-              setV(d);
-              submit(d);
-            }}
-            className="h-11 border border-input bg-secondary text-foreground hover:bg-muted"
-          >
-            <Sparkles className="size-4 text-warning" /> Load Demo Trip
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">US location data: <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">GeoNames</a>.</p>
