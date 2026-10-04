@@ -60,8 +60,8 @@ export function RouteMap({ plan }: { plan: TripPlan }) {
   // A line through only the three stops is an estimate, not a driveable route.
   // Do not render it as a road: wait for the backend's OSRM geometry instead.
   const routePoints = useMemo(
-    () => (plan.routeGeometry && plan.routeGeometry.length > 1 ? plan.routeGeometry : undefined),
-    [plan.routeGeometry],
+    () => (plan.routingSource === "osrm" && plan.routeGeometry && plan.routeGeometry.length > 2 ? plan.routeGeometry : undefined),
+    [plan.routingSource, plan.routeGeometry],
   );
   const hasRoadGeometry = Boolean(routePoints);
 
@@ -144,7 +144,7 @@ export function RouteMap({ plan }: { plan: TripPlan }) {
       <p className="border-t border-border px-5 py-2 text-xs text-muted-foreground">
         {plan.routingSource === "osrm" && hasRoadGeometry
           ? "Live road route from OSRM/OpenStreetMap. Zoom, pan, or select a route marker for details."
-          : "Road geometry is loading or unavailable. Submit a trip to request a driveable road route."}
+          : "Road routing is unavailable for this plan. Location markers are shown without an estimated straight line; submit again to request an OSRM road route."}
       </p>
     </Card>
   );
