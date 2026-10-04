@@ -5,9 +5,10 @@ import { Card, CardHeader } from "./ui";
 
 export function TripSummary({ plan }: { plan: TripPlan }) {
   const cycleUsedAfter = 70 * 60 - plan.cycleRemainingMinutes;
+  const speed = plan.input.averageSpeedMph ?? 55;
   const stats = [
     { label: "Route distance", value: `${Math.round(plan.totalMiles).toLocaleString()} mi`, sub: `${Math.round(plan.legMiles.toPickup)} + ${Math.round(plan.legMiles.toDropoff)} mi` },
-    { label: "Est. driving time", value: fmtDuration(plan.drivingMinutes), sub: "@ 55 mph average" },
+    { label: "Est. driving time", value: fmtDuration(plan.drivingMinutes), sub: `@ ${speed} mph average` },
     { label: "Total trip time", value: fmtDuration(plan.tripMinutes), sub: `${plan.logs.length} log days` },
     { label: "On-duty (not driving)", value: fmtDuration(plan.onDutyMinutes), sub: `incl. ${fmtDuration(plan.handlingMinutes)} pickup/dropoff` },
     { label: "Breaks / Fuel stops", value: `${plan.counts.breaks} / ${plan.counts.fuel}`, sub: "fuel stops count as breaks" },
@@ -37,7 +38,7 @@ export function TripSummary({ plan }: { plan: TripPlan }) {
           <div className="bg-primary" style={{ width: `${((cycleUsedAfter / 60 - (plan.counts.restarts ? 0 : plan.input.cycleUsedHours)) / 70) * 100}%` }} />
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Grey: entered baseline ({plan.input.cycleUsedHours} h){plan.counts.restarts ? " — cleared by restart" : ""} · Navy: this trip's on-duty time.
+          Grey: entered 8-day history ({plan.input.cycleUsedHours} h){plan.counts.restarts ? " — cleared by restart" : ""} · Navy: this trip's on-duty time.
         </p>
       </div>
     </Card>

@@ -8,7 +8,7 @@ unit-testable.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from functools import lru_cache
 import json
 import math
@@ -239,18 +239,34 @@ def build_daily_logs(events: list[dict[str, Any]], start_date: date) -> list[dic
 
 
 class Planner:
-    def __init__(self, current: Point, pickup: Point, dropoff: Point, cycle_used_hours: float):
+    def __init__(self, current: Point, pickup: Point, dropoff: Point, cycle_history_hours: list[float], start_minute: int, average_speed_mph: float):
         self.current = current
         self.pickup = pickup
         self.dropoff = dropoff
         self.position = current
-        self.cycle = cycle_used_hours * 60
+        self.cycle_days = [hours * 60 for hours in cycle_history_hours]
+        self.cycle = sum(self.cycle_days)
+        self.cycle_day_index = 0
+        self.average_speed_mph = average_speed_mph
         self.events: list[dict[str, Any]] = []
         self.clock = 0.0
         self.shift_driving = 0.0
         self.window_start: float | None = None
         self.driving_since_break = 0.0
         self.miles_since_fuel = 0.0
+
+    def align_cycle_day(self) -> None:
+        """Advance the rolling eight-day window when the scheduled date changes."""
+        target_day = int(self.clock // (24 * 60))
+        while self.cycle_day_index < target_day:
+            self.cycle_days = self.cycle_days[1:] + [0.0]
+            self.cycle = sum(self.cycle_days)
+            self.cycle_day_index += 1
+
+    def charge_cycle(self, duration: float) -> None:
+        self.align_cycle_day()
+        self.cycle_days[-1] += duration
+        self.cycle += duration
 
     def add(self, kind: str, status: DutyStatus, duration: float, note: str, *, miles: float | None = None, location: Point | None = None) -> None:
         if duration <= 0:
@@ -280,16 +296,32 @@ class Planner:
 
     def restart(self) -> None:
         self.add("restart", "OFF", RESTART_MINUTES, "34-hour cycle restart (70-hour limit reached)")
+        self.align_cycle_day()
+        self.cycle_days = [0.0] * 8
         self.cycle = 0.0
         self.reset_daily_limits()
 
     def on_duty(self, kind: str, duration: float, note: str) -> None:
-        if self.cycle + duration > CYCLE_MINUTES + EPSILON:
-            self.restart()
-        if self.window_start is None:
-            self.window_start = self.clock
-        self.add(kind, "ON", duration, note)
-        self.cycle += duration
+        remaining = duration
+        while remaining > EPSILON:
+            self.align_cycle_day()
+            # Keep on-duty time in the correct rolling-day bucket if a service
+            # stop spans midnight.
+            until_midnight = 24 * 60 - (self.clock % (24 * 60))
+            chunk = min(remaining, until_midnight)
+            # Pickup, fuel, and delivery time all count inside the same
+            # 14-hour duty window. If service would overrun it, reset first.
+            if self.window_start is not None and self.clock - self.window_start + chunk > DRIVING_WINDOW_MINUTES + EPSILON:
+                self.rest()
+                continue
+            if self.cycle + chunk > CYCLE_MINUTES + EPSILON:
+                self.restart()
+                continue
+            if self.window_start is None:
+                self.window_start = self.clock
+            self.add(kind, "ON", chunk, note)
+            self.charge_cycle(chunk)
+            remaining -= chunk
         if duration >= BREAK_MINUTES:
             self.driving_since_break = 0.0
 
@@ -300,6 +332,7 @@ class Planner:
             safety += 1
             if safety > 500:
                 raise RuntimeError("The route planner exceeded its safety limit.")
+            self.align_cycle_day()
             self.position = point_on_route(geometry, covered / miles)
             if self.window_start is None:
                 self.window_start = self.clock
@@ -307,8 +340,9 @@ class Planner:
             driving_left = MAX_DRIVING_MINUTES - self.shift_driving
             window_left = DRIVING_WINDOW_MINUTES - (self.clock - self.window_start)
             break_left = BREAK_AFTER_DRIVING_MINUTES - self.driving_since_break
-            fuel_left = ((FUEL_EVERY_MILES - self.miles_since_fuel) / AVERAGE_SPEED_MPH) * 60
-            remaining_drive_minutes = ((miles - covered) / AVERAGE_SPEED_MPH) * 60
+            fuel_left = ((FUEL_EVERY_MILES - self.miles_since_fuel) / self.average_speed_mph) * 60
+            remaining_drive_minutes = ((miles - covered) / self.average_speed_mph) * 60
+            until_midnight = 24 * 60 - (self.clock % (24 * 60))
 
             if cycle_left <= EPSILON:
                 self.restart()
@@ -325,19 +359,19 @@ class Planner:
                 self.driving_since_break = 0.0
                 continue
 
-            duration = min(cycle_left, driving_left, window_left, break_left, fuel_left, remaining_drive_minutes)
-            segment_miles = duration / 60 * AVERAGE_SPEED_MPH
+            duration = min(cycle_left, driving_left, window_left, break_left, fuel_left, remaining_drive_minutes, until_midnight)
+            segment_miles = duration / 60 * self.average_speed_mph
             self.add("drive", "D", duration, f"Driving toward {end.name}", miles=segment_miles)
             covered += segment_miles
             self.shift_driving += duration
             self.driving_since_break += duration
             self.miles_since_fuel += segment_miles
-            self.cycle += duration
+            self.charge_cycle(duration)
         self.position = end
         return miles
 
 
-def validate_input(payload: object) -> tuple[Point, Point, Point, float, date, dict[str, Any]]:
+def validate_input(payload: object) -> tuple[Point, Point, Point, float, list[float], int, float, date, dict[str, Any]]:
     if not isinstance(payload, dict):
         raise PlannerInputError("Expected a JSON object.")
     current = find_location(payload.get("currentLocation"), "Current location")
@@ -349,6 +383,31 @@ def validate_input(payload: object) -> tuple[Point, Point, Point, float, date, d
     cycle_used = float(cycle_value)
     if not 0 <= cycle_used <= 70:
         raise PlannerInputError("Current cycle used must be between 0 and 70.")
+    history_value = payload.get("cycleHistoryHours")
+    if history_value is None:
+        cycle_history = [0.0] * 7 + [cycle_used]
+    elif isinstance(history_value, list) and len(history_value) == 8 and all(isinstance(hours, (int, float)) and not isinstance(hours, bool) and math.isfinite(hours) and 0 <= hours <= 24 for hours in history_value):
+        cycle_history = [float(hours) for hours in history_value]
+        history_total = sum(cycle_history)
+        if history_total > 70 + EPSILON:
+            raise PlannerInputError("The rolling 8-day on-duty total cannot exceed 70 hours.")
+        if abs(cycle_used - history_total) > 0.01:
+            raise PlannerInputError("Current cycle used must equal the rolling 8-day total.")
+        cycle_used = history_total
+    else:
+        raise PlannerInputError("Rolling 8-day history must contain eight values from 0 to 24 hours.")
+    start_time_value = payload.get("startTime", "06:00")
+    if not isinstance(start_time_value, str):
+        raise PlannerInputError("Start time must be a valid HH:MM time.")
+    try:
+        parsed_start_time = time.fromisoformat(start_time_value)
+    except ValueError as exc:
+        raise PlannerInputError("Start time must be a valid HH:MM time.") from exc
+    start_minute = parsed_start_time.hour * 60 + parsed_start_time.minute
+    speed_value = payload.get("averageSpeedMph", AVERAGE_SPEED_MPH)
+    if isinstance(speed_value, bool) or not isinstance(speed_value, (int, float)) or not math.isfinite(speed_value) or not 35 <= speed_value <= 75:
+        raise PlannerInputError("Planning speed must be a number between 35 and 75 mph.")
+    average_speed = float(speed_value)
     start_date_value = payload.get("startDate")
     if start_date_value is None:
         plan_start_date = date.today()
@@ -364,15 +423,18 @@ def validate_input(payload: object) -> tuple[Point, Point, Point, float, date, d
         "pickupLocation": pickup.name,
         "dropoffLocation": dropoff.name,
         "cycleUsedHours": cycle_used,
+        "cycleHistoryHours": cycle_history,
+        "startTime": f"{parsed_start_time.hour:02d}:{parsed_start_time.minute:02d}",
+        "averageSpeedMph": average_speed,
     }
-    return current, pickup, dropoff, cycle_used, plan_start_date, normalized
+    return current, pickup, dropoff, cycle_used, cycle_history, start_minute, average_speed, plan_start_date, normalized
 
 
 def create_plan(payload: object, *, start_date: date | None = None) -> dict[str, Any]:
-    current, pickup, dropoff, cycle_used, client_start_date, normalized_input = validate_input(payload)
+    current, pickup, dropoff, cycle_used, cycle_history, start_minute, average_speed, client_start_date, normalized_input = validate_input(payload)
     routed_trip = route_trip(current, pickup, dropoff)
-    planner = Planner(current, pickup, dropoff, cycle_used)
-    planner.add("prior", "OFF", TRIP_START_MINUTE, "Off duty - prior reset completed")
+    planner = Planner(current, pickup, dropoff, cycle_history, start_minute, average_speed)
+    planner.add("prior", "OFF", start_minute, "Off duty - prior reset completed")
     trip_start = planner.clock
     miles_to_pickup = planner.drive(current, pickup, routed_trip.legs[0].miles, routed_trip.legs[0].geometry)
     planner.on_duty("pickup", HANDLING_MINUTES, "Pickup - loading at shipper")
@@ -396,7 +458,7 @@ def create_plan(payload: object, *, start_date: date | None = None) -> dict[str,
     warnings: list[dict[str, str]] = [{
         "level": "info",
         "title": "Rolling 8-day availability",
-        "message": "Cycle hours are modeled from the entered baseline. Actual rolling availability requires historical duty records.",
+        "message": "Cycle availability uses the eight entered on-duty day totals and rolls forward as the schedule crosses midnight.",
     }]
     if routed_trip.source == "estimate":
         warnings.insert(0, {"level": "warning", "title": "Offline route estimate", "message": routed_trip.notice})

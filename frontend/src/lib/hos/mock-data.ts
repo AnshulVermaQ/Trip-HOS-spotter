@@ -73,6 +73,9 @@ export const DEMO_TRIP: TripInput = {
   pickupLocation: "St. Louis, MO",
   dropoffLocation: "Phoenix, AZ",
   cycleUsedHours: 22,
+  cycleHistoryHours: [0, 0, 0, 0, 0, 0, 0, 22],
+  startTime: "06:00",
+  averageSpeedMph: 55,
 };
 
 /** Day 1 of the demo/planned trip (dates are rendered in UTC for determinism). */

@@ -9,15 +9,23 @@ import { Button } from "@/components/ui/button";
 import { EditLog, getDriverDetails } from "./EditLog";
 
 function recapForDay(plan: TripPlan, log: DailyLog) {
-  const dayEnd = log.day * 1440;
-  let cycle = plan.input.cycleUsedHours * 60;
-  for (const event of plan.events) {
-    if (event.start >= dayEnd) break;
-    const end = Math.min(event.end, dayEnd);
-    if (event.kind === "restart" && end >= event.end) cycle = 0;
-    if (event.status === "D" || event.status === "ON") cycle += end - event.start;
+  const history = (plan.input.cycleHistoryHours?.length === 8
+    ? [...plan.input.cycleHistoryHours]
+    : [0, 0, 0, 0, 0, 0, 0, plan.input.cycleUsedHours]).map((hours) => hours * 60);
+  for (let day = 1; day <= log.day; day += 1) {
+    if (day > 1) history.splice(0, 1), history.push(0);
+    for (const event of plan.events) {
+      const dayStart = (day - 1) * 1440;
+      const dayEnd = day * 1440;
+      const start = Math.max(event.start, dayStart);
+      const end = Math.min(event.end, dayEnd);
+      if (end <= start) continue;
+      if (event.kind === "restart" && end >= event.end) history.fill(0);
+      if (event.status === "D" || event.status === "ON") history[7] += end - start;
+    }
   }
   const onDutyToday = log.totals.D + log.totals.ON;
+  const cycle = history.reduce((total, minutes) => total + minutes, 0);
   return {
     onDutyToday,
     cycleTotal: Math.min(cycle, 70 * 60),
@@ -55,6 +63,7 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
   const valid = Math.abs(total - 1440) < 0.5;
   const [y, m, d] = log.date.split("-");
   const recap = recapForDay(plan, log);
+  const cumulativeMiles = plan.logs.slice(0, log.day).reduce((totalMiles, dailyLog) => totalMiles + dailyLog.miles, 0);
 
   return (
     <article className="eld-log-sheet rounded-xl border-2 border-log-ink/70 bg-card p-5 sm:p-6">
@@ -84,7 +93,8 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
       <div className="eld-log-fields mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="From" value={log.day === 1 ? plan.points.current.name : log.remarks[0]?.location ?? "—"} />
         <Field label="To" value={plan.points.dropoff.name} />
-        <Field label="Total mileage today" value={`${Math.round(log.miles)} mi`} />
+        <Field label="Total miles driving today" value={`${Math.round(log.miles)} mi`} />
+        <Field label="Total mileage today" value={`${Math.round(cumulativeMiles)} mi`} />
         <Field label="Truck / trailer numbers" value={`${details.truck} / ${details.trailer}`} />
         <Field label="Name of carrier" value={details.carrier} />
         <Field label="Main office address" value={details.carrierAddress} />

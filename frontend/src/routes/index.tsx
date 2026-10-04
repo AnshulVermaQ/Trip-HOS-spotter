@@ -57,7 +57,7 @@ function Index() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Trip Planner</h1>
-          <p className="mt-1 text-muted-foreground">Property-carrying · 70-hr / 8-day cycle · 55 mph average</p>
+          <p className="mt-1 text-muted-foreground">Property-carrying · rolling 70-hr / 8-day cycle · driver-selected planning speed</p>
         </div>
         <Disclaimer />
       </div>
@@ -65,7 +65,7 @@ function Index() {
       <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <TripPlannerForm initial={plan.input} loading={loading} onSubmit={onSubmit} />
-          <ModelAssumptions />
+          <ModelAssumptions plan={plan} />
           {error && <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-sm text-destructive">{error}</p>}
         </div>
         <div className={loading ? "space-y-6 opacity-60 transition" : "space-y-6 transition"}>

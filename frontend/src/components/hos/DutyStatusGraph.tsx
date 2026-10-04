@@ -2,7 +2,7 @@ import type React from "react";
 import { fmtHours } from "@/lib/hos/engine";
 import { DUTY_ORDER, type DailyLog } from "@/lib/hos/types";
 
-const LABEL_W = 120;
+const LABEL_W = 144;
 const GRID_W = 960;
 const TOTAL_W = 70;
 const HEADER = 22;
@@ -53,7 +53,7 @@ export function DutyStatusGraph({ log }: { log: DailyLog }) {
         {DUTY_ORDER.map((s, r) => (
           <g key={s}>
             <rect x={LABEL_W} y={HEADER + r * ROW} width={GRID_W} height={ROW} fill={r % 2 ? "var(--muted)" : "var(--card)"} stroke="var(--log-ink)" strokeOpacity={0.6} />
-            <text x={6} y={HEADER + r * ROW + ROW / 2 + 4} fontSize={11} fontWeight={600} fill="var(--log-ink)">
+            <text x={8} y={HEADER + r * ROW + ROW / 2 + 4} fontSize={10.5} fontWeight={600} fill="var(--log-ink)">
               {rowLabels[r]}
             </text>
             <text x={LABEL_W + GRID_W + TOTAL_W / 2} y={HEADER + r * ROW + ROW / 2 + 4} textAnchor="middle" fontSize={12} fontWeight={700} className="tabular" fill="var(--log-ink)">

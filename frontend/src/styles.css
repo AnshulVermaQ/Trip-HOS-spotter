@@ -207,6 +207,16 @@
 
 #print-root { display: none; }
 
+@media (max-width: 640px) {
+  .eld-log-sheet { border-radius: 0.7rem; padding: 0.9rem; }
+  .eld-log-header { gap: 0.75rem; }
+  .eld-log-header > div:first-child { flex-basis: 100%; }
+  .eld-log-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem 0.8rem; }
+  .eld-log-fields p { font-size: 0.72rem; overflow-wrap: anywhere; }
+  .eld-log-fields p + p { font-size: 0.56rem; }
+  .eld-log-remarks li { gap: 0.55rem; font-size: 0.78rem; }
+}
+
 @media print {
   .no-print { display: none !important; }
   body { background: white; }

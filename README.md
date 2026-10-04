@@ -6,15 +6,15 @@ API health check: https://trip-hos-spotter.vercel.app/api/health/
 
 ## What it does
 
-Enter a current location, pickup location, dropoff location, and the driver's current used cycle hours. The application generates a road route, scheduled compliance stops, daily ELD log sheets, and saved trip history.
+Enter a current location, pickup location, dropoff location, the driver's eight-day duty history, a local start time, and a planning speed. The application generates a road route, scheduled compliance stops, daily ELD log sheets, and saved trip history.
 
 ## HOS modeling assumptions
 
-- Property-carrying operation using the 70-hour / 8-day cycle
-- 11-hour driving limit and 14-hour driving window after a qualifying 10-hour reset
+- Property-carrying operation using a rolling 70-hour / 8-day cycle calculated from eight entered daily on-duty totals
+- 11-hour driving limit and a 14-hour duty window that includes driving, pickup, fuel, and dropoff time after a qualifying 10-hour reset
 - 30-minute qualifying interruption after 8 cumulative driving hours
 - 10-hour daily reset and a 34-hour restart when the 70-hour cycle is exhausted
-- Fixed 55 mph modeled driving speed
+- Driver-selected 35–75 mph modeled driving speed (55 mph is the default)
 - One hour each for pickup and dropoff
 - Fuel planned at least every 1,000 route miles
 - No adverse-driving or other HOS exceptions modeled

@@ -31,6 +31,12 @@ export interface TripInput {
   pickupLocation: string;
   dropoffLocation: string;
   cycleUsedHours: number;
+  /** Oldest to newest duty-hour totals for the driver's current 8-day window. */
+  cycleHistoryHours?: number[];
+  /** Local start time for day 1, in 24-hour HH:MM form. */
+  startTime?: string;
+  /** Driver-selected planning speed; road distance still comes from OSRM. */
+  averageSpeedMph?: number;
 }
 
 /** Times are minutes from 00:00 of trip day 1. */

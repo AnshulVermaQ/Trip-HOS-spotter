@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from .engine import CYCLE_MINUTES, Point, create_plan, estimated_trip, thin_geometry
+from .engine import CYCLE_MINUTES, Planner, Point, create_plan, estimated_trip, thin_geometry
 
 
 def offline_route_for_test(current, pickup, dropoff):
@@ -42,6 +42,30 @@ class PlannerEngineTests(TestCase):
         plan = create_plan({**self.payload, "startDate": "2026-10-04"})
         self.assertEqual(plan["startDate"], "2026-10-04")
         self.assertEqual(plan["logs"][0]["date"], "2026-10-04")
+
+    @patch("trips.engine.route_trip", side_effect=offline_route_for_test)
+    def test_rolling_history_start_time_and_speed_are_used(self, _route_trip):
+        history = [2, 3, 4, 1, 2, 3, 3, 4]
+        plan = create_plan({
+            **self.payload,
+            "cycleUsedHours": sum(history),
+            "cycleHistoryHours": history,
+            "startTime": "09:30",
+            "averageSpeedMph": 50,
+        })
+        self.assertEqual(plan["input"]["cycleHistoryHours"], history)
+        self.assertEqual(plan["input"]["startTime"], "09:30")
+        self.assertEqual(plan["input"]["averageSpeedMph"], 50)
+        self.assertEqual(plan["events"][0]["end"], 9.5 * 60)
+
+    def test_service_event_does_not_run_past_the_14_hour_window(self):
+        planner = Planner(Point("Start", 0, 0), Point("Pickup", 0, 1), Point("Dropoff", 0, 2), [0] * 8, 6 * 60, 55)
+        planner.clock = 19.5 * 60
+        planner.window_start = 6 * 60
+        planner.on_duty("pickup", 60, "Pickup")
+        self.assertEqual(planner.events[0]["kind"], "rest")
+        self.assertEqual(planner.events[1]["kind"], "pickup")
+        self.assertGreaterEqual(planner.events[1]["start"] - planner.events[0]["start"], 10 * 60)
 
     def test_geometry_is_reduced_without_losing_endpoints(self):
         source = [Point("Route point", float(index), float(index)) for index in range(10_000)]
