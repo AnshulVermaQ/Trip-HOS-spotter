@@ -1,8 +1,17 @@
 import { Clock } from "lucide-react";
 import { eventDay, fmtClock, fmtDuration } from "@/lib/hos/engine";
-import { DUTY_LABELS, type TripPlan } from "@/lib/hos/types";
+import { DUTY_LABELS, type EventKind, type TripPlan } from "@/lib/hos/types";
 import { Card, CardHeader, kindColor, kindLabel } from "./ui";
 import { cn } from "@/lib/utils";
+
+const stopReason: Partial<Record<EventKind, string>> = {
+  pickup: "Required pickup handling time",
+  dropoff: "Required dropoff handling time",
+  fuel: "Fuel interval reached; also qualifies as a 30-minute interruption",
+  break: "8 cumulative driving hours reached",
+  rest: "10-hour qualifying reset required before more driving",
+  restart: "70-hour / 8-day cycle limit reached",
+};
 
 export function StopTimeline({ plan }: { plan: TripPlan }) {
   const events = plan.events.filter((e) => e.kind !== "prior" && e.kind !== "end");
@@ -30,7 +39,11 @@ export function StopTimeline({ plan }: { plan: TripPlan }) {
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   <span className="rounded-md bg-secondary px-2 py-0.5 font-medium">{DUTY_LABELS[e.status]}</span>
                   <span className="tabular rounded-md bg-secondary px-2 py-0.5">{fmtDuration(e.end - e.start)}</span>
-                  <span className="text-muted-foreground">{e.note}</span>
+                  {stopReason[e.kind] ? (
+                    <span className="text-muted-foreground"><strong className="font-medium text-foreground">Why this stop:</strong> {stopReason[e.kind]}</span>
+                  ) : (
+                    <span className="text-muted-foreground">{e.note}</span>
+                  )}
                 </div>
               </div>
             </li>

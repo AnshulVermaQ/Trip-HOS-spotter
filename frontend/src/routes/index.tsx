@@ -9,6 +9,7 @@ import { TripSummary } from "@/components/hos/TripSummary";
 import { HOSAlerts } from "@/components/hos/HOSAlerts";
 import { StopTimeline } from "@/components/hos/StopTimeline";
 import { DailyLogTabs } from "@/components/hos/DailyLogTabs";
+import { ModelAssumptions } from "@/components/hos/ModelAssumptions";
 import { Disclaimer } from "@/components/hos/TopNav";
 
 export const Route = createFileRoute("/")({
@@ -55,6 +56,7 @@ function Index() {
       <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
         <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <TripPlannerForm initial={plan.input} loading={loading} onSubmit={onSubmit} />
+          <ModelAssumptions />
           {error && <p role="alert" className="rounded-lg bg-danger-soft px-4 py-3 text-sm text-destructive">{error}</p>}
         </div>
         <div className={loading ? "space-y-6 opacity-60 transition" : "space-y-6 transition"}>
