@@ -1,7 +1,7 @@
 import json
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from .engine import CYCLE_MINUTES, create_plan, estimated_trip
 
@@ -71,3 +71,14 @@ class TripApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("between 0 and 70", response.json()["detail"])
+
+    @override_settings(CORS_ALLOWED_ORIGINS={"https://trip-hos-spotter-r2pf.vercel.app"})
+    def test_cors_preflight_is_accepted_for_configured_frontend(self):
+        response = self.client.options(
+            "/api/trips/plan/",
+            HTTP_ORIGIN="https://trip-hos-spotter-r2pf.vercel.app",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response["Access-Control-Allow-Origin"], "https://trip-hos-spotter-r2pf.vercel.app")
+        self.assertIn("POST", response["Access-Control-Allow-Methods"])

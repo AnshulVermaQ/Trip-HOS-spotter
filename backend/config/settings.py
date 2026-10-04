@@ -45,8 +45,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "trips.middleware.DevelopmentCorsMiddleware",
+    # CORS must run before CommonMiddleware, which otherwise rejects browser
+    # preflight OPTIONS requests with 405 before this middleware can answer.
+    "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
