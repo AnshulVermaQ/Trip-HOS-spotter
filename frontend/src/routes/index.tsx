@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { hasRemoteApi, planTrip } from "@/lib/api/hos-api";
 import { DEMO_TRIP } from "@/lib/hos/mock-data";
 import type { TripInput } from "@/lib/hos/types";
-import { setCurrentPlan, useCurrentPlan } from "@/lib/trip-store";
+import { hasStoredTrip, setCurrentPlan, useCurrentPlan } from "@/lib/trip-store";
 import { TripPlannerForm } from "@/components/hos/TripPlannerForm";
 import { RouteMap } from "@/components/hos/RouteMap";
 import { TripSummary } from "@/components/hos/TripSummary";
@@ -47,7 +47,7 @@ function Index() {
   };
 
   useEffect(() => {
-    if (!hasRemoteApi || didLoadDefault.current) return;
+    if (!hasRemoteApi || didLoadDefault.current || hasStoredTrip()) return;
     didLoadDefault.current = true;
     void onSubmit(DEMO_TRIP);
   }, []);
