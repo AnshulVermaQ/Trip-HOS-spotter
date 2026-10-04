@@ -58,6 +58,17 @@ export const CITIES: GeoPoint[] = [
 export const US_LOCATIONS: GeoPoint[] = usLocations.map(([name, lat, lng]) => ({ name: String(name), lat: Number(lat), lng: Number(lng) }));
 const cityLookup = new Map(US_LOCATIONS.map((city) => [city.name.toLowerCase(), city]));
 
+/** This planner currently supports road-connected contiguous-US trips only. */
+export function isUnsupportedRoadLocation(name: string) {
+  return /,\s*(AK|HI)$/i.test(name.trim());
+}
+
+/** Major cities lead the picker instead of an alphabetical town list such as Akhiok. */
+export const ROUTABLE_LOCATIONS: GeoPoint[] = [
+  ...CITIES.filter((city) => !isUnsupportedRoadLocation(city.name)),
+  ...US_LOCATIONS.filter((city) => !isUnsupportedRoadLocation(city.name) && !CITIES.some((major) => major.name === city.name)),
+];
+
 export function geocode(query: string): GeoPoint | null {
   const q = query.trim().toLowerCase();
   if (!q) return null;

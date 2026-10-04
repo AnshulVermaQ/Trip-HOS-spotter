@@ -49,8 +49,8 @@ function printDailyLog(event: React.MouseEvent<HTMLButtonElement>) {
 
 function Field({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className={cn("border-b border-log-ink/40 pb-1", className)}>
-      <p className="font-mono text-sm text-log-ink">{value}</p>
+    <div className={cn("min-w-0 border-b border-log-ink/40 pb-1", className)}>
+      <p className="break-words font-mono text-sm leading-tight text-log-ink">{value}</p>
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
   );
@@ -63,7 +63,6 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
   const valid = Math.abs(total - 1440) < 0.5;
   const [y, m, d] = log.date.split("-");
   const recap = recapForDay(plan, log);
-  const cumulativeMiles = plan.logs.slice(0, log.day).reduce((totalMiles, dailyLog) => totalMiles + dailyLog.miles, 0);
 
   return (
     <article className="eld-log-sheet rounded-xl border-2 border-log-ink/70 bg-card p-5 sm:p-6">
@@ -90,11 +89,11 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
         </div>
       </header>
 
-      <div className="eld-log-fields mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="eld-log-fields mt-4 grid gap-x-6 gap-y-3 pb-2 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="From" value={log.day === 1 ? plan.points.current.name : log.remarks[0]?.location ?? "—"} />
         <Field label="To" value={plan.points.dropoff.name} />
         <Field label="Total miles driving today" value={`${Math.round(log.miles)} mi`} />
-        <Field label="Total mileage today" value={`${Math.round(cumulativeMiles)} mi`} />
+        <Field label="Total mileage today" value={`${Math.round(log.miles)} mi`} />
         <Field label="Truck / trailer numbers" value={`${details.truck} / ${details.trailer}`} />
         <Field label="Name of carrier" value={details.carrier} />
         <Field label="Main office address" value={details.carrierAddress} />
@@ -104,10 +103,10 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
         <Field label="Home terminal / time base" value={details.homeTerminal} />
         <Field label="Pickup" value={plan.points.pickup.name} />
         <Field label="Shipping document" value={details.shippingDoc} />
-        <Field label="Shipper and commodity" value={details.shipperCommodity} />
+        <Field className="lg:col-span-2" label="Shipper and commodity" value={details.shipperCommodity} />
       </div>
 
-      <div className="eld-log-graph mt-5">
+      <div className="eld-log-graph mt-7">
         <DutyStatusGraph log={log} />
       </div>
 

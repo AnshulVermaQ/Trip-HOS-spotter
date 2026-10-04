@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, Route as RouteIcon } from "lucide-react";
-import { geocode } from "@/lib/hos/mock-data";
+import { geocode, isUnsupportedRoadLocation } from "@/lib/hos/mock-data";
 import type { TripInput } from "@/lib/hos/types";
 import { Card, CardHeader } from "./ui";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ type Errors = { [K in keyof TripInput]?: string | undefined };
 function validate(v: { currentLocation: string; pickupLocation: string; dropoffLocation: string; history: string[]; startTime: string; speed: string }): Errors {
   const e: Errors = {};
   const loc = (val: string, label: string) =>
-    !val.trim() ? `${label} is required.` : !geocode(val) ? "Choose a US city or town from the list." : undefined;
+    !val.trim() ? `${label} is required.` : !geocode(val) ? "Choose a road-connected US city or town from the list." : isUnsupportedRoadLocation(val) ? "Alaska and Hawaii are not supported because this planner models contiguous-US road routes only." : undefined;
   e.currentLocation = loc(v.currentLocation, "Current location");
   e.pickupLocation = loc(v.pickupLocation, "Pickup location");
   e.dropoffLocation = loc(v.dropoffLocation, "Dropoff location");

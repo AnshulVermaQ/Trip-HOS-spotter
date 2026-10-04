@@ -83,6 +83,8 @@ def find_location(value: object, field_name: str) -> Point:
     point = location_lookup().get(value.strip().casefold())
     if point is None:
         raise PlannerInputError(f"{field_name} was not found in the US location catalog.")
+    if point.name.endswith(", AK") or point.name.endswith(", HI"):
+        raise PlannerInputError(f"{field_name} is outside the supported contiguous-US road network. Alaska and Hawaii trips are not modeled.")
     return point
 
 
@@ -433,6 +435,8 @@ def validate_input(payload: object) -> tuple[Point, Point, Point, float, list[fl
 def create_plan(payload: object, *, start_date: date | None = None) -> dict[str, Any]:
     current, pickup, dropoff, cycle_used, cycle_history, start_minute, average_speed, client_start_date, normalized_input = validate_input(payload)
     routed_trip = route_trip(current, pickup, dropoff)
+    if routed_trip.source != "osrm":
+        raise PlannerInputError("A drivable road route could not be found for the selected locations. Choose road-connected contiguous-US locations and try again.")
     planner = Planner(current, pickup, dropoff, cycle_history, start_minute, average_speed)
     planner.add("prior", "OFF", start_minute, "Off duty - prior reset completed")
     trip_start = planner.clock

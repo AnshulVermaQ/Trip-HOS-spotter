@@ -3,11 +3,14 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from .engine import CYCLE_MINUTES, Planner, Point, create_plan, estimated_trip, thin_geometry
+from .engine import CYCLE_MINUTES, Planner, PlannerInputError, Point, RoutedTrip, create_plan, estimated_trip, thin_geometry
 
 
 def offline_route_for_test(current, pickup, dropoff):
-    return estimated_trip(current, pickup, dropoff, "Test routing stub.")
+    estimated = estimated_trip(current, pickup, dropoff, "Test routing stub.")
+    # The deterministic fixture has the same legs but represents a verified
+    # drivable route; production estimates are rejected before scheduling.
+    return RoutedTrip(estimated.legs, "osrm", "Test road-route fixture.")
 
 
 class PlannerEngineTests(TestCase):
@@ -73,6 +76,10 @@ class PlannerEngineTests(TestCase):
         self.assertLessEqual(len(reduced), 2500)
         self.assertEqual(reduced[0], source[0])
         self.assertEqual(reduced[-1], source[-1])
+
+    def test_alaska_location_is_rejected_before_route_planning(self):
+        with self.assertRaisesRegex(PlannerInputError, "contiguous-US road network"):
+            create_plan({**self.payload, "pickupLocation": "Akhiok, AK"})
 
 
 class TripApiTests(TestCase):
