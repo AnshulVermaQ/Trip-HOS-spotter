@@ -27,6 +27,10 @@ if not DEBUG and SECRET_KEY == "unsafe-development-key-change-me":
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
 if vercel_host := os.getenv("VERCEL_URL"):
     ALLOWED_HOSTS.append(vercel_host)
+    # Vercel's public production alias and each preview deployment use
+    # different *.vercel.app hostnames. Accept those platform-generated aliases
+    # without requiring an environment-variable edit after every deployment.
+    ALLOWED_HOSTS.append(".vercel.app")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
