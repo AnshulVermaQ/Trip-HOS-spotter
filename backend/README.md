@@ -2,6 +2,10 @@
 
 This Django service supplies the API expected by the React frontend.
 
+**Live frontend:** https://trip-hos-spotter-r2pf.vercel.app/
+
+**Live API health check:** https://trip-hos-spotter.vercel.app/api/health/
+
 ## Run locally
 
 From this directory, create a virtual environment, install `requirements.txt`, then run:
@@ -17,12 +21,13 @@ Set `VITE_API_BASE_URL=http://127.0.0.1:8000` in the frontend environment to use
 
 - `POST /api/trips/plan/` creates a trip plan and persists it.
 - `GET /api/trips/<id>/logs/` returns that trip's generated daily logs.
+- `PUT /api/trips/<id>/` saves user edits to a generated plan and its ELD logs.
 - `GET /api/trips/` returns persisted trip history.
 - `GET /api/health/` returns service health.
 
 The scheduler models the assessment assumptions: property-carrying operations, 70-hour/8-day cycle, 11-hour driving limit, 14-hour driving window, an 8-hour driving-break trigger, 10-hour resets, one-hour pickup/dropoff, and fuel at 1,000-mile intervals. It is a planning aid, not a compliance system or legal advice.
 
-Location data is packaged for deterministic geocoding. The planner requests live driving distance and simplified road geometry from OSRM/OpenStreetMap by default. If the routing service is unavailable, it still returns a plan using an explicitly labelled offline estimate instead of failing silently. Set `OSRM_BASE_URL` to use a hosted or self-managed OSRM service.
+Location data is packaged for deterministic geocoding. The planner requests live driving distance and full road geometry from OSRM/OpenStreetMap, then reduces the returned map geometry to at most 2,500 points while retaining the route shape and endpoints. If the routing service is unavailable, it returns an explicitly labelled offline estimate instead of silently claiming live routing. Set `OSRM_BASE_URL` to use a hosted or self-managed OSRM service.
 
 ## Deploy on Vercel
 

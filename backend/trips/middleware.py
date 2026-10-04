@@ -30,6 +30,6 @@ class DevelopmentCorsMiddleware:
         if allowed_origin:
             response["Access-Control-Allow-Origin"] = origin
             response["Vary"] = "Origin"
-            response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            response["Access-Control-Allow-Methods"] = "GET, POST, PUT, OPTIONS"
             response["Access-Control-Allow-Headers"] = "Content-Type"
         return response

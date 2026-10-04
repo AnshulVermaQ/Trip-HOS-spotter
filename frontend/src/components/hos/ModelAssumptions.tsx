@@ -6,7 +6,7 @@ const assumptions = [
   ["Driving model", "Fixed 55 mph average"],
   ["Duty handling", "1 hour at pickup and dropoff"],
   ["Fuel planning", "At least every 1,000 route miles"],
-  ["Route source", "Live OSRM / OpenStreetMap roads"],
+  ["Road routing", "OSRM / OpenStreetMap when a trip is planned"],
 ];
 
 export function ModelAssumptions() {

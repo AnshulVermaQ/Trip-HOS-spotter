@@ -80,15 +80,16 @@ export const TRIP_START_DATE = "2026-10-05";
 export const TRIP_START_MINUTE = 6 * 60; // 06:00
 
 export const MOCK_DRIVER = {
-  name: "Driver (demo)",
-  signature: "Driver (demo)",
-  coDriver: "N/A",
-  homeTerminal: "Home terminal time",
-  carrier: "Carrier name — placeholder",
-  carrierAddress: "Main office address — placeholder",
-  truck: "Truck #—— / Trailer #——",
-  shippingDoc: "BOL # —— (placeholder)",
-  shipperCommodity: "Shipper / commodity — placeholder",
+  name: "Alex Morgan",
+  signature: "Alex Morgan",
+  coDriver: "Jordan Lee",
+  homeTerminal: "Chicago, IL · Central Time",
+  carrier: "RoadReady Transport LLC",
+  carrierAddress: "2500 W Madison St, Chicago, IL 60612",
+  truck: "RR-4812",
+  trailer: "TR-9074",
+  shippingDoc: "BOL-CHI-10482",
+  shipperCommodity: "Midwest Freight Co. · Packaged consumer goods",
 };
 
 export const MOCK_HISTORY: TripHistoryItem[] = [

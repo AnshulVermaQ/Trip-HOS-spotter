@@ -35,6 +35,7 @@ FUEL_MINUTES = 30
 HANDLING_MINUTES = 60
 TRIP_START_MINUTE = 6 * 60
 EPSILON = 1e-6
+MAX_ROUTE_GEOMETRY_POINTS = 2500
 
 
 class PlannerInputError(ValueError):
@@ -133,6 +134,17 @@ def osrm_leg(start: Point, end: Point) -> RouteLeg:
         return RouteLeg(float(route["distance"]) / 1609.344, geometry)
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         raise RuntimeError("OSRM returned an invalid route response") from exc
+
+
+def thin_geometry(points: list[Point], maximum: int = MAX_ROUTE_GEOMETRY_POINTS) -> list[Point]:
+    """Keep map responses compact while preserving the complete route endpoints."""
+    if len(points) <= maximum:
+        return points
+    step = math.ceil((len(points) - 1) / (maximum - 1))
+    reduced = points[::step]
+    if reduced[-1] != points[-1]:
+        reduced.append(points[-1])
+    return reduced
 
 
 def route_trip(current: Point, pickup: Point, dropoff: Point) -> RoutedTrip:
@@ -325,7 +337,7 @@ class Planner:
         return miles
 
 
-def validate_input(payload: object) -> tuple[Point, Point, Point, float, dict[str, Any]]:
+def validate_input(payload: object) -> tuple[Point, Point, Point, float, date, dict[str, Any]]:
     if not isinstance(payload, dict):
         raise PlannerInputError("Expected a JSON object.")
     current = find_location(payload.get("currentLocation"), "Current location")
@@ -337,17 +349,27 @@ def validate_input(payload: object) -> tuple[Point, Point, Point, float, dict[st
     cycle_used = float(cycle_value)
     if not 0 <= cycle_used <= 70:
         raise PlannerInputError("Current cycle used must be between 0 and 70.")
+    start_date_value = payload.get("startDate")
+    if start_date_value is None:
+        plan_start_date = date.today()
+    elif isinstance(start_date_value, str):
+        try:
+            plan_start_date = date.fromisoformat(start_date_value)
+        except ValueError as exc:
+            raise PlannerInputError("Start date must be a valid YYYY-MM-DD date.") from exc
+    else:
+        raise PlannerInputError("Start date must be a valid YYYY-MM-DD date.")
     normalized = {
         "currentLocation": current.name,
         "pickupLocation": pickup.name,
         "dropoffLocation": dropoff.name,
         "cycleUsedHours": cycle_used,
     }
-    return current, pickup, dropoff, cycle_used, normalized
+    return current, pickup, dropoff, cycle_used, plan_start_date, normalized
 
 
 def create_plan(payload: object, *, start_date: date | None = None) -> dict[str, Any]:
-    current, pickup, dropoff, cycle_used, normalized_input = validate_input(payload)
+    current, pickup, dropoff, cycle_used, client_start_date, normalized_input = validate_input(payload)
     routed_trip = route_trip(current, pickup, dropoff)
     planner = Planner(current, pickup, dropoff, cycle_used)
     planner.add("prior", "OFF", TRIP_START_MINUTE, "Off duty - prior reset completed")
@@ -397,12 +419,12 @@ def create_plan(payload: object, *, start_date: date | None = None) -> dict[str,
             "message": "The planned schedule fits the modeled driving, break, duty-window, and cycle constraints.",
         })
 
-    plan_start_date = start_date or date.today()
+    plan_start_date = start_date or client_start_date
     return {
         "input": normalized_input,
         "startDate": plan_start_date.isoformat(),
         "points": {"current": current.as_dict(), "pickup": pickup.as_dict(), "dropoff": dropoff.as_dict()},
-        "routeGeometry": [point.as_dict() for point in routed_trip.geometry],
+        "routeGeometry": [point.as_dict() for point in thin_geometry(routed_trip.geometry)],
         "routingSource": routed_trip.source,
         "routingNotice": routed_trip.notice,
         "totalMiles": total_miles,

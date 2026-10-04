@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { planTrip } from "@/lib/api/hos-api";
+import { useEffect, useRef, useState } from "react";
+import { hasRemoteApi, planTrip } from "@/lib/api/hos-api";
+import { DEMO_TRIP } from "@/lib/hos/mock-data";
 import type { TripInput } from "@/lib/hos/types";
 import { setCurrentPlan, useCurrentPlan } from "@/lib/trip-store";
 import { TripPlannerForm } from "@/components/hos/TripPlannerForm";
@@ -31,6 +32,7 @@ function Index() {
   const plan = useCurrentPlan();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const didLoadDefault = useRef(false);
 
   const onSubmit = async (input: TripInput) => {
     setLoading(true);
@@ -43,6 +45,12 @@ function Index() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!hasRemoteApi || didLoadDefault.current) return;
+    didLoadDefault.current = true;
+    void onSubmit(DEMO_TRIP);
+  }, []);
 
   return (
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">

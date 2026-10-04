@@ -8,6 +8,23 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EditLog, getDriverDetails } from "./EditLog";
 
+function recapForDay(plan: TripPlan, log: DailyLog) {
+  const dayEnd = log.day * 1440;
+  let cycle = plan.input.cycleUsedHours * 60;
+  for (const event of plan.events) {
+    if (event.start >= dayEnd) break;
+    const end = Math.min(event.end, dayEnd);
+    if (event.kind === "restart" && end >= event.end) cycle = 0;
+    if (event.status === "D" || event.status === "ON") cycle += end - event.start;
+  }
+  const onDutyToday = log.totals.D + log.totals.ON;
+  return {
+    onDutyToday,
+    cycleTotal: Math.min(cycle, 70 * 60),
+    availableTomorrow: Math.max(0, 70 * 60 - cycle),
+  };
+}
+
 function printDailyLog(event: React.MouseEvent<HTMLButtonElement>) {
   const sheet = event.currentTarget.closest("article");
   if (!sheet) return;
@@ -37,10 +54,11 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
   const total = Object.values(log.totals).reduce((a, b) => a + b, 0);
   const valid = Math.abs(total - 1440) < 0.5;
   const [y, m, d] = log.date.split("-");
+  const recap = recapForDay(plan, log);
 
   return (
-    <article className="rounded-xl border-2 border-log-ink/70 bg-card p-5 sm:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-log-ink/70 pb-4">
+    <article className="eld-log-sheet rounded-xl border-2 border-log-ink/70 bg-card p-5 sm:p-6">
+      <header className="eld-log-header flex flex-wrap items-start justify-between gap-4 border-b-2 border-log-ink/70 pb-4">
         <div>
           <h3 className="text-lg font-bold tracking-tight text-log-ink">Driver's Daily Log</h3>
           <p className="text-xs text-muted-foreground">(24 hours) · Original — file at home terminal</p>
@@ -63,10 +81,10 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
         </div>
       </header>
 
-      <div className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="eld-log-fields mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="From" value={log.day === 1 ? plan.points.current.name : log.remarks[0]?.location ?? "—"} />
         <Field label="To" value={plan.points.dropoff.name} />
-        <Field label="Total miles driving today" value={`${Math.round(log.miles)}`} />
+        <Field label="Total mileage today" value={`${Math.round(log.miles)} mi`} />
         <Field label="Truck / trailer numbers" value={`${details.truck} / ${details.trailer}`} />
         <Field label="Name of carrier" value={details.carrier} />
         <Field label="Main office address" value={details.carrierAddress} />
@@ -79,7 +97,7 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
         <Field label="Shipper and commodity" value={details.shipperCommodity} />
       </div>
 
-      <div className="mt-5">
+      <div className="eld-log-graph mt-5">
         <DutyStatusGraph log={log} />
       </div>
 
@@ -95,7 +113,16 @@ export function EldLogSheet({ plan, log }: { plan: TripPlan; log: DailyLog }) {
         </span>
       </div>
 
-      <section className="mt-5">
+      <section className="eld-log-recap mt-4 border-y border-log-ink/50 py-3">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-log-ink">Recap · complete at end of day</h4>
+        <div className="mt-2 grid gap-3 sm:grid-cols-3">
+          <Field label="A · On-duty hours today" value={`${fmtHours(recap.onDutyToday)} h`} />
+          <Field label="B · 70-hr cycle total incl. today" value={`${fmtHours(recap.cycleTotal)} h`} />
+          <Field label="C · Hours available tomorrow" value={`${fmtHours(recap.availableTomorrow)} h`} />
+        </div>
+      </section>
+
+      <section className="eld-log-remarks mt-5">
         <h4 className="border-b-2 border-log-ink/70 pb-1 text-sm font-bold uppercase tracking-wide text-log-ink">Remarks</h4>
         <ul className="divide-y divide-border">
           {log.remarks.map((r, i) => (

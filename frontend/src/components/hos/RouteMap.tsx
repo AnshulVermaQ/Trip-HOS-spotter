@@ -144,7 +144,7 @@ export function RouteMap({ plan }: { plan: TripPlan }) {
       <p className="border-t border-border px-5 py-2 text-xs text-muted-foreground">
         {plan.routingSource === "osrm" && hasRoadGeometry
           ? "Live road route from OSRM/OpenStreetMap. Zoom, pan, or select a route marker for details."
-          : "Road geometry is not loaded for this local demo. Select Plan Trip to fetch the live driveable route."}
+          : "Road geometry is loading or unavailable. Submit a trip to request a driveable road route."}
       </p>
     </Card>
   );

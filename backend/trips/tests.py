@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from .engine import CYCLE_MINUTES, create_plan, estimated_trip
+from .engine import CYCLE_MINUTES, Point, create_plan, estimated_trip, thin_geometry
 
 
 def offline_route_for_test(current, pickup, dropoff):
@@ -37,6 +37,19 @@ class PlannerEngineTests(TestCase):
         self.assertEqual(plan["warnings"][0]["title"], "34-hour restart required")
         self.assertLessEqual(plan["cycleRemainingMinutes"], CYCLE_MINUTES)
 
+    @patch("trips.engine.route_trip", side_effect=offline_route_for_test)
+    def test_client_supplied_start_date_is_used_for_logs(self, _route_trip):
+        plan = create_plan({**self.payload, "startDate": "2026-10-04"})
+        self.assertEqual(plan["startDate"], "2026-10-04")
+        self.assertEqual(plan["logs"][0]["date"], "2026-10-04")
+
+    def test_geometry_is_reduced_without_losing_endpoints(self):
+        source = [Point("Route point", float(index), float(index)) for index in range(10_000)]
+        reduced = thin_geometry(source)
+        self.assertLessEqual(len(reduced), 2500)
+        self.assertEqual(reduced[0], source[0])
+        self.assertEqual(reduced[-1], source[-1])
+
 
 class TripApiTests(TestCase):
     payload = {
@@ -61,6 +74,11 @@ class TripApiTests(TestCase):
         history = self.client.get("/api/trips/")
         self.assertEqual(history.status_code, 200)
         self.assertEqual(history.json()[0]["id"], plan["id"])
+
+        plan["driverDetails"] = {"driverName": "Alex Morgan"}
+        updated = self.client.put(f"/api/trips/{plan['id']}/", data=json.dumps(plan), content_type="application/json")
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.json()["driverDetails"]["driverName"], "Alex Morgan")
 
     @patch("trips.engine.route_trip", side_effect=offline_route_for_test)
     def test_invalid_input_returns_400(self, _route_trip):

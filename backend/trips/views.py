@@ -2,7 +2,7 @@ import json
 
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .engine import PlannerInputError, create_plan
 from .models import Trip
@@ -49,6 +49,29 @@ def trip_logs(_: HttpRequest, trip_id: str) -> JsonResponse:
     except (Trip.DoesNotExist, ValueError):
         return error("Trip not found.", 404)
     return JsonResponse(trip.plan["logs"], safe=False)
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def update_trip(request: HttpRequest, trip_id: str) -> JsonResponse:
+    try:
+        trip = Trip.objects.get(pk=trip_id)
+    except (Trip.DoesNotExist, ValueError):
+        return error("Trip not found.", 404)
+    try:
+        plan = json.loads(request.body)
+    except (TypeError, UnicodeDecodeError, json.JSONDecodeError):
+        return error("Request body must contain valid JSON.", 400)
+    if not isinstance(plan, dict) or not isinstance(plan.get("events"), list) or not isinstance(plan.get("logs"), list):
+        return error("A complete trip plan with events and logs is required.", 400)
+    if str(plan.get("id")) != str(trip.id):
+        return error("Trip ID does not match the requested trip.", 400)
+    trip.plan = plan
+    trip.input = plan.get("input", trip.input)
+    trip.miles = round(float(plan.get("totalMiles", trip.miles)))
+    trip.days = len(plan["logs"])
+    trip.save(update_fields=["plan", "input", "miles", "days"])
+    return JsonResponse(plan)
 
 
 @require_GET

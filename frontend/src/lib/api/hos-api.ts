@@ -14,6 +14,14 @@ import type { DailyLog, TripHistoryItem, TripInput, TripPlan } from "@/lib/hos/t
 const BASE = (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "");
 
 export class ApiError extends Error {}
+export const hasRemoteApi = Boolean(BASE);
+
+function localIsoDate() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -37,9 +45,17 @@ export function planTripSync(input: TripInput): TripPlan {
 }
 
 export async function planTrip(input: TripInput): Promise<TripPlan> {
-  if (BASE) return http<TripPlan>("/api/trips/plan/", { method: "POST", body: JSON.stringify(input) });
+  if (BASE) return http<TripPlan>("/api/trips/plan/", { method: "POST", body: JSON.stringify({ ...input, startDate: localIsoDate() }) });
   await new Promise((r) => setTimeout(r, 450)); // simulate latency
   return planTripSync(input);
+}
+
+export async function saveTrip(plan: TripPlan): Promise<TripPlan> {
+  if (!BASE) {
+    planCache.set(plan.id, plan);
+    return plan;
+  }
+  return http<TripPlan>(`/api/trips/${plan.id}/`, { method: "PUT", body: JSON.stringify(plan) });
 }
 
 export async function getTripLogs(tripId: string): Promise<DailyLog[]> {

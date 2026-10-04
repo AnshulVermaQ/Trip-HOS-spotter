@@ -28,7 +28,7 @@ export function RouteDirections({ plan }: { plan: TripPlan }) {
 
   return (
     <Card>
-      <CardHeader icon={<RouteIcon className="size-4" />} title="Route directions" subtitle="Road-route legs and required scheduled stops" />
+      <CardHeader icon={<RouteIcon className="size-4" />} title="Route directions" subtitle="Planned legs and required scheduled stops" />
       <div className="divide-y divide-border">
         <ol className="px-5 py-1">
           {legs.map((leg, index) => (
