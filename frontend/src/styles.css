@@ -1,0 +1,217 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --shadow-card: var(--shadow-card);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-navy-muted: var(--navy-muted);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger-soft: var(--danger-soft);
+  --color-info-soft: var(--info-soft);
+  --color-marker-current: var(--marker-current);
+  --color-marker-pickup: var(--marker-pickup);
+  --color-marker-dropoff: var(--marker-dropoff);
+  --color-marker-stop: var(--marker-stop);
+  --color-marker-rest: var(--marker-rest);
+  --color-duty-off: var(--duty-off);
+  --color-duty-sb: var(--duty-sb);
+  --color-duty-d: var(--duty-d);
+  --color-duty-on: var(--duty-on);
+  --color-map-land: var(--map-land);
+  --color-map-grid: var(--map-grid);
+  --color-map-state: var(--map-state);
+  --color-map-border: var(--map-border);
+  --color-map-city-dot: var(--map-city-dot);
+  --color-log-ink: var(--log-ink);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.975 0.005 250);
+  --foreground: oklch(0.22 0.04 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.04 260);
+  --primary: oklch(0.27 0.06 258);
+  --primary-foreground: oklch(0.98 0.005 250);
+  --secondary: oklch(0.945 0.01 250);
+  --secondary-foreground: oklch(0.27 0.06 258);
+  --muted: oklch(0.955 0.008 250);
+  --muted-foreground: oklch(0.5 0.03 255);
+  --accent: oklch(0.8 0.15 75);
+  --accent-foreground: oklch(0.25 0.05 60);
+  --destructive: oklch(0.56 0.2 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.905 0.012 250);
+  --input: oklch(0.88 0.015 250);
+  --ring: oklch(0.75 0.15 75);
+  --navy: oklch(0.21 0.05 260);
+  --navy-foreground: oklch(0.96 0.01 250);
+  --navy-muted: oklch(0.7 0.03 255);
+  --success: oklch(0.55 0.13 155);
+  --success-soft: oklch(0.95 0.04 155);
+  --warning: oklch(0.62 0.15 65);
+  --warning-soft: oklch(0.96 0.05 80);
+  --danger-soft: oklch(0.95 0.03 25);
+  --info-soft: oklch(0.95 0.025 250);
+  --marker-current: oklch(0.55 0.18 255);
+  --marker-pickup: oklch(0.58 0.15 150);
+  --marker-dropoff: oklch(0.57 0.2 27);
+  --marker-stop: oklch(0.75 0.16 70);
+  --marker-rest: oklch(0.52 0.18 300);
+  --duty-off: oklch(0.6 0.03 255);
+  --duty-sb: oklch(0.52 0.18 300);
+  --duty-d: oklch(0.55 0.18 255);
+  --duty-on: oklch(0.7 0.16 65);
+  --map-land: oklch(0.955 0.012 230);
+  --map-grid: oklch(0.9 0.015 235);
+  --map-state: oklch(0.935 0.014 232);
+  --map-border: oklch(0.83 0.02 236);
+  --map-city-dot: oklch(0.44 0.06 235);
+  --map-city-label: oklch(0.35 0.05 245);
+  --map-halo: oklch(0.98 0.005 240);
+  --map-route: oklch(0.35 0.12 257);
+  --log-ink: oklch(0.25 0.08 260);
+  --shadow-card: 0 1px 2px oklch(0.2 0.04 260 / 6%), 0 8px 24px -12px oklch(0.2 0.04 260 / 14%);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    background-image: radial-gradient(circle at 50% -20%, oklch(0.93 0.035 220 / 55%), transparent 38rem);
+  }
+}
+
+@layer base {
+  body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .spotter-mark img { image-rendering: auto; }
+}
+
+.leaflet-container {
+  background: var(--map-land);
+  font-family: var(--font-sans);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.leaflet-popup-content {
+  margin: 0.7rem 0.85rem;
+}
+
+.leaflet-popup-title {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leaflet-popup-body {
+  margin: 0.2rem 0 0;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.leaflet-control-zoom a {
+  color: var(--foreground) !important;
+}
+
+#print-root { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  body:has(#print-root) > *:not(#print-root) { display: none !important; }
+  #print-root { display: block !important; width: 100%; }
+  #print-root article { border: 0; border-radius: 0; box-shadow: none; padding: 0; }
+  @page { size: landscape; margin: 10mm; }
+}
